@@ -150,18 +150,18 @@ std::string generate_output_location(std::string inputFileName, std::string outp
 
 	if (strcmp(outputFileName.c_str(), "auto")==0) {
 		outputFileName = inputFileName;
-		int tailDot = outputFileName.find_last_of('.');
-		if (tailDot != std::string::npos)
-			outputFileName.erase(tailDot, outputFileName.length());
-		outputFileName = outputFileName + "_[" + ReplaceString(mode, "noise_scale", "NS") + "-";
-		//std::string &mode = mode;
-		if (mode.find("noise") != mode.npos) {
-			outputFileName = outputFileName + "L" + std::to_string(NRLevel) + "]";
-		}
-		if (mode.find("scale") != mode.npos) {
-			outputFileName = outputFileName + "[x" + std::to_string(scaleRatio) + "]";
-		}
-		outputFileName += ".png";
+// 		int tailDot = outputFileName.find_last_of('.');
+// 		if (tailDot != std::string::npos)
+// 			outputFileName.erase(tailDot, outputFileName.length());
+// 		outputFileName = outputFileName + "_[" + ReplaceString(mode, "noise_scale", "NS") + "-";
+// 		//std::string &mode = mode;
+// 		if (mode.find("noise") != mode.npos) {
+// 			outputFileName = outputFileName + "L" + std::to_string(NRLevel) + "]";
+// 		}
+// 		if (mode.find("scale") != mode.npos) {
+// 			outputFileName = outputFileName + "[x" + std::to_string(scaleRatio) + "]";
+// 		}
+//		outputFileName += ".png";
 	}
 	else if (outputFileName.back() == '/' || outputFileName.back() == '\\') {
 		//outputFileName = output folder or "auto/"
@@ -227,6 +227,33 @@ int main(int argc, char** argv) {
 			return 0;
 		}
 	}
+
+	if (argc == 2)
+	{
+		W2XConv *converter = w2xconv_init(W2XCONV_GPU_DISABLE, 0, false);
+		convInfo convInfo("noise_scale", 1, 2.0, 0, converter);
+
+		char exeFileNameBuff[1024];
+		GetModuleFileName(NULL, exeFileNameBuff, 1024);
+		std::string exeFileName(exeFileNameBuff);
+		size_t foundExeDot = exeFileName.find_last_of('\\');
+		if (foundExeDot != std::string::npos)
+		{
+			std::string exePath = exeFileName.substr(0, foundExeDot+1);//with /
+			int error = w2xconv_load_models(converter, (exePath + "models_rgb").c_str());
+			check_for_errors(converter, error);
+			std::string outPath(argv[1]);
+			size_t foundDot = outPath.find_last_of('.');
+			if(foundDot != std::string::npos)
+			{
+				outPath = outPath.substr(0, foundDot - 1) + std::string(".WF2X") + outPath.substr(foundDot);
+				convert_file(convInfo, std::string(argv[1]), outPath);
+				return 0;
+			}
+		}
+		return 1;
+	}
+
 
 	// definition of command line arguments
 	TCLAP::CmdLine cmd("waifu2x OpenCV Fork - https://github.com/DeadSix27/waifu2x-converter-cpp", ' ', _VERSION, true);
